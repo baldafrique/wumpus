@@ -1,6 +1,5 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class HuntTheWumpus {
@@ -64,6 +63,7 @@ public class HuntTheWumpus {
      */
     public static Random random = new Random();
 
+    // 플레이어의 입력을 처리할 Scanner 객체
     public static Scanner scanner = new Scanner(System.in);
 
     /*
@@ -113,6 +113,9 @@ public class HuntTheWumpus {
 
             // 게임 플레이 시작
             game();
+
+            // 게임 플레이가 끝나면 다시 플레이할지 게임을 종료할지 선택
+            selectReplay();
         }
     }
 
@@ -124,7 +127,7 @@ public class HuntTheWumpus {
         // 이제 gameOver가 false인 동안 플레이를 반복
         while (gameOver == false) {
             // 플레이어가 취할 수 있는 행동의 목록 안내
-            System.out.println("\n당신은" + currentRoom + "번 방에 있습니다.");
+            System.out.println("\n당신은 " + currentRoom + "번 방에 있습니다.");
             System.out.println("행동을 선택하세요.");
             System.out.println("1. 이동");
             System.out.println("2. 화살쏘기");
@@ -213,101 +216,50 @@ public class HuntTheWumpus {
     }
 
     /*
-    플레이어가 화살을 쐈을 때 그 이벤트들을 처리하는 메소드
-    화살을 쏜 방에 움퍼스가 있는지를 판단하고
-    움퍼스를 맞췄을 때와 그렇지 않을 때의 처리
+    src/intro.txt 파일을 읽어 인트로 출력
+    한줄 출력할때마다 500ms씩 쉼
      */
-    private static void shoot(int Room) {
-        // 화살의 개수를 하나 줄임
-        arrowCount--;
-    }
-
-    private static void move(int room) {
-        // 먼저 플레이어의 현재 위치를 이동할 방으로 변경
-        currentRoom = room;
-        System.out.println(currentRoom + "번 방으로 이동했습니다.");
-
-        String hazard = hazards.get(currentRoom);
-
-        delay(1000L);
-
-        /*
-        만일 이동한 방에 움퍼스가 있다면
-        움퍼스가 플레이어를 잡아먹고 게임 플레이 종료
-         */
-        if (hazard.equals(WUMPUS)) {
-            System.out.println("\"으아아아아악!\"");
-            delay(300L);
-            System.out.println("움퍼스가 당신을 잡아먹었습니다");
-            gameOver = true;
-        }
-
-        else if (hazard.equals(PIT)) {
-            System.out.println("\"으아아아아아아아-\"");
-            delay(1000L);
-            System.out.println("쿵!");
-            delay(300L);
-            System.out.println("당신은 구덩이에 빠졌습니다.");
-            delay(300L);
-            System.out.println("더이상 움퍼스를 사냥할 수 없습니다.");
-            gameOver = true;
-        }
-
-        /*
-        만일 이동해간 방에 박쥐가 있다면
-        박쥐가 플레이어를 잡아 다른 방에 던짐
-        박쥐가 플레이어를 잡아 옮길 때에는 다른 박쥐가 있는 방은 피함
-        플레이어를 던져버린 박쥐는 또 다른 방으로 이동
-        박쥐 또한 또다른 박쥐가 있는 방을 피해서 이동
-         */
-        else if (hazard.equals(BAT)) {
-            System.out.println("쿵!");
-            delay(300L);
-            System.out.println("박쥐가 당신을 잡아 다른 방에 떨어트렸습니다.");
-
-            /*
-            플레이어가 이동할 방을 랜덤하게 선택
-            만일 선택한 방에 박쥐가 있다면 박쥐가 없는 방이 나올때까지
-            랜덤한 방을 다시 선택
-             */
-            do {
-               currentRoom = random.nextInt(rooms.length);
-            } while (hazards.get(currentRoom).equals(BAT));
-
-            /*
-            박쥐를 이동시키기 위해 원해 방의 박쥐는 먼저 제거
-            플레이어가 이동할 방을 선택하는 것보다 박쥐를 먼저 제거하면
-            플레이어가 제자리에 머무는 경우가 생기게 되므로
-            플레이어가 이동할 위치를 먼저 선택한 후 박쥐를 제거
-             */
-            hazards.set(room, NOTHING);
-
-            /*
-            플레이어를 이동시킨 후에는 플레이어가 있는 방이나
-            또다른 박쥐가 있는 방을 피해 박쥐를 이동
-             */
-            while (true) {
-                // 박쥐가 이동해갈 방을 랜덤하게 선택
-                int newBatRoom = random.nextInt(rooms.length);
-
-                /*
-                선택된 방이 플레이어가 있는 방이라면
-                반복문의 청므으로 되돌아가 방을 다시 선택
-                 */
-                if (newBatRoom == currentRoom) {
-                    continue;
-                }
+    private static void showIntro() {
+        FileInputStream inputStream = null;
+        try {
+            inputStream = new FileInputStream("src/intro.txt");
+            Scanner scanner = new Scanner(inputStream);
+            while (scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
+                delay(500L);
             }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
     /*
-    문자열을 정수로 변환해 반환
+    게임 시작 시 게임 플레이와 관련된 변수들을 초기화해주는 메소드
+    플레이어의 시작 위치, 화살 개수 등이 이에 해당
      */
-    private static int parseIntegerOrNegative1(String input) {
-        return Integer.parseInt(input);
+    private static void initializePlayVariables() {
+        // 게임이 시작되면 gameOver 변수를 false로 설정
+        gameOver = false;
+
+        currentRoom = random.nextInt(rooms.length);
+        arrowCount = 5;
     }
 
+    // 게임이 내내 변하지 않는 값들을 먼저 초기화해주는 메소드
+    // 위험요소 근처에서 출력해줄 메시지가 이에 해당
+    private static void initializeStaticValues() {
+        /*
+        각 위험요소가 근처에 있을 때 출력해줄 메시지
+        예를 들어, 구덩이(Pit)이 근처에 있다면
+        "바람이 부는 소리가 들리는 것 같다."라는 메시지를 출력
+         */
+        hazardMessages.put(WUMPUS, "\"어디선가 끔찍한 냄새가 난다.\"");
+        hazardMessages.put(BAT, "\"어디선가 부스럭거리는 소리가 들린다.\"");
+        hazardMessages.put(PIT, "\"바람이 부는 소리가 들리는 것 같다.\"");
+        hazardMessages.put(NOTHING, "\"저 방에는 아무것도 없는 것 같다.\"");
+    }
+
+    // 게임 플레이가 시작될 때 랜덤하게 위험요소를 배치해주는 메소드
     private static void setupHazards() {
         /*
         게임이 시작되었을 때 위험요소를 나타내는 목록이 비어있다면
@@ -360,6 +312,28 @@ public class HuntTheWumpus {
                 if (isTooCloseWithPlayer(room)) {
                     continue;
                 }
+
+                /*
+                현재 방에 아무런 위험요소가 없는 경우
+                현재 선택된 방 번호를 유지한 채 반복문 종료
+                 */
+                if (hazards.get(room).equals(NOTHING)) {
+                    break;
+                }
+            }
+
+            /*
+            선택한 방 번호에 해당하는 위험요소의 위치에
+            현재 순서에 해당하는 위험요소를 배치
+             */
+            hazards.set(room, hazard);
+
+            /*
+            만일 현재 순서에 해당하는 위험요소가 움퍼스라면
+            움퍼스가 위치한 방 번호를 wumpusRoom 변수에 저장
+             */
+            if (hazard.equals(WUMPUS)) {
+                wumpusRoom = room;
             }
         }
     }
@@ -398,46 +372,263 @@ public class HuntTheWumpus {
         return false;
     }
 
-    private static void initializePlayVariables() {
-        // 게임이 시작되면 gameOver 변수를 false로 설정
-        gameOver = false;
-
-        currentRoom = random.nextInt(rooms.length);
-        arrowCount = 5;
-    }
-
-    // 게임이 내내 변하지 않는 값들을 먼저 초기화해주는 메소드
-    // 위험요소 근처에서 출력해줄 메시지가 이에 해당
-    private static void initializeStaticValues() {
-        /*
-        각 위험요소가 근처에 있을 때 출력해줄 메시지
-        예를 들어, 구덩이(Pit)이 근처에 있다면
-        "바람이 부는 소리가 들리는 것 같다."라는 메시지를 출력
-         */
-        hazardMessages.put(WUMPUS, "\"어디선가 끔찍한 냄새가 난다.\"");
-        hazardMessages.put(BAT, "\"어디선가 부스럭거리는 소리가 들린다.\"");
-        hazardMessages.put(BAT, "\"바람이 부는 소리가 들리는 것 같다.\"");
-        hazardMessages.put(BAT, "\"저 방에는 아무것도 없는 것 같다.\"");
-    }
-
     /*
-    src/intro.txt 파일을 읽어 인트로 출력
-    한줄 출력할때마다 500ms씩 쉼
-     */
-    private static void showIntro() {
-        FileInputStream inputStream = null;
-        try {
-            inputStream = new FileInputStream("src/intro.txt");
-            Scanner scanner = new Scanner(inputStream);
-            while (scanner.hasNextLine()) {
-                System.out.println(scanner.nextLine());
-                delay(500L);
+플레이어가 이동했을 때 이동과 그 뒤의 이벤트들을 처리하는 메소드
+이동을 하게 되면 그 방에 어떤 위혐요소가 있는지를 판단하고
+각 위험요소에 해당하는 이벤트를 처리
+ */
+    private static void move(int room) {
+        // 먼저 플레이어의 현재 위치를 이동할 방으로 변경
+        currentRoom = room;
+        System.out.println(currentRoom + "번 방으로 이동했습니다.");
+
+        String hazard = hazards.get(currentRoom);
+
+        delay(1000L);
+
+        /*
+        만일 이동한 방에 움퍼스가 있다면
+        움퍼스가 플레이어를 잡아먹고 게임 플레이 종료
+         */
+        if (hazard.equals(WUMPUS)) {
+            System.out.println("\"으아아아아악!\"");
+            delay(300L);
+            System.out.println("움퍼스가 당신을 잡아먹었습니다");
+            gameOver = true;
+        }
+
+        else if (hazard.equals(PIT)) {
+            System.out.println("\"으아아아아아아아-\"");
+            delay(1000L);
+            System.out.println("쿵!");
+            delay(300L);
+            System.out.println("당신은 구덩이에 빠졌습니다.");
+            delay(300L);
+            System.out.println("더이상 움퍼스를 사냥할 수 없습니다.");
+            gameOver = true;
+        }
+
+        /*
+        만일 이동해간 방에 박쥐가 있다면
+        박쥐가 플레이어를 잡아 다른 방에 던짐
+        박쥐가 플레이어를 잡아 옮길 때에는 다른 박쥐가 있는 방은 피함
+        플레이어를 던져버린 박쥐는 또 다른 방으로 이동
+        박쥐 또한 또다른 박쥐가 있는 방을 피해서 이동
+         */
+        else if (hazard.equals(BAT)) {
+            System.out.println("쿵!");
+            delay(300L);
+            System.out.println("박쥐가 당신을 잡아 다른 방에 떨어트렸습니다.");
+
+            /*
+            플레이어가 이동할 방을 랜덤하게 선택
+            만일 선택한 방에 박쥐가 있다면 박쥐가 없는 방이 나올때까지
+            랜덤한 방을 다시 선택
+             */
+            do {
+                currentRoom = random.nextInt(rooms.length);
+            } while (hazards.get(currentRoom).equals(BAT));
+
+            /*
+            박쥐를 이동시키기 위해 원해 방의 박쥐는 먼저 제거
+            플레이어가 이동할 방을 선택하는 것보다 박쥐를 먼저 제거하면
+            플레이어가 제자리에 머무는 경우가 생기게 되므로
+            플레이어가 이동할 위치를 먼저 선택한 후 박쥐를 제거
+             */
+            hazards.set(room, NOTHING);
+
+            /*
+            플레이어를 이동시킨 후에는 플레이어가 있는 방이나
+            또다른 박쥐가 있는 방을 피해 박쥐를 이동
+             */
+            while (true) {
+                // 박쥐가 이동해갈 방을 랜덤하게 선택
+                int newBatRoom = random.nextInt(rooms.length);
+
+                /*
+                선택된 방이 플레이어가 있는 방이라면
+                반복문의 처음으로 되돌아가 방을 다시 선택
+                 */
+                if (newBatRoom == currentRoom) {
+                    continue;
+                }
+
+                /*
+                선택된 방에 플레이어도 또다른 위험요소도 없다면
+                선택된 방에 박쥐 배치
+                 */
+                if (hazards.get(newBatRoom).equals(NOTHING)) {
+                    hazards.set(newBatRoom, BAT);
+                    break;
+                }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+
+            /*
+            플레이어의 위치가 변경되었으므로 다시한번
+            해당 방으로 이동했을 때에 대한 이벤트 처리
+             */
+            move(currentRoom);
+        }
+
+        /*
+        만일 이동해간 방에 움퍼스도 구덩이도 박쥐도 없다면
+        이동해간 방과 연결된 방들을 살펴 위험요소들에 대한 메시지 출력
+         */
+        else {
+            /*
+            플레이어에게 움퍼스가 있는 방을 들키지 않게 하기 위해서
+            현재 위치에 연결된 방들의 목록을 랜덤하게 섞음
+             */
+            List<Integer> nextRooms = Arrays.asList(links[currentRoom]);
+            Collections.shuffle(nextRooms);
+
+            /*
+            연결되어있는 방들에 배치된 위험요소들을 파악해
+            각 위험요소들에 대한 메시지 출력
+             */
+            System.out.println("\n(연결되어 있는 통로를 살핀다.)");
+            for (int nextRoom : nextRooms) {
+                delay(700L);
+                String hazardAround = hazards.get(nextRoom);
+                System.out.println(hazardMessages.get(hazardAround));
+            }
         }
     }
 
+    /*
+    플레이어가 화살을 쐈을 때 그 이벤트들을 처리하는 메소드
+    화살을 쏜 방에 움퍼스가 있는지를 판단하고
+    움퍼스를 맞췄을 때와 그렇지 않을 때의 처리
+     */
+    private static void shoot(int room) {
+        // 화살의 개수를 하나 줄임
+        arrowCount--;
+
+        delay(1000L);
+        System.out.println("슈웅");
+        delay(300L);
+
+        /*
+        화살을 쏜 방이 움퍼스가 있는 방인 경우
+        게임 클리어 메시지와 함께 게임 플레이 종료
+         */
+        if (hazards.get(room).equals(WUMPUS)) {
+            System.out.println("푸슉!");
+            delay(100L);
+            System.out.println("\"쿠에에에엑!\"");
+            delay(1000L);
+            System.out.println("축하합니다. 당신은 움퍼스를 죽였습니다!");
+            gameOver = true;
+        }
+
+        /*
+        화살을 쏜 방이 움퍼스가 있는 방이 아닌 경우
+        화살이 다 떨어졌다면 실패 메시지와 함께 게임 플레이 종료
+        아직 화살이 남아있다면 75%의 확률로 움퍼스를 깨우고
+        움퍼스가 이동한 뒤의 이벤트 처리
+         */
+        else {
+            System.out.println("(...)");
+            delay(1000L);
+            System.out.println("\"화살만 낭비했군.\"");
+
+            /*
+            화살이 다 떨어진 경우 게임 플레이 종료
+             */
+            if (arrowCount == 0) {
+                delay(300L);
+                System.out.println("\"이런, 화살이 남지 않았다!\"");
+                delay(300L);
+                System.out.println("당신은 움퍼스 사냥에 실패했습니다.");
+                gameOver = true;
+            }
+
+            /*
+            75%의 확률로 움퍼스가 이동을 시도
+            random.nextInt(4)를 이용해 0~3까지의 숫자 중 하나를 고르면
+            네개의 숫자 중 하나가 아닌 경우를 판단해
+            3/4의 확률을 만들어낼 수 있음
+             */
+            else if (random.nextInt(4) != 0) {
+                System.out.println("당신은 움퍼스를 깨웠습니다");
+                delay(1000L);
+
+                Integer[] nextRooms = links[wumpusRoom];
+
+                // 움퍼스가 있는 방과 연결된 방 중 하나를 랜덤하게 선택
+                int nextRoom = nextRooms[random.nextInt(3)];
+
+                // 선택된 방에 아무 위험요소도 없다면 움퍼스를 이동
+                if (hazards.get(nextRoom).equals(NOTHING)) {
+                    hazards.set(wumpusRoom, NOTHING);
+                    hazards.set(nextRoom, WUMPUS);
+                    wumpusRoom = nextRoom;
+                }
+
+                /*
+                움퍼스가 이동해간 방이 플레이어와 같은 방이라면
+                플레이어를 잡아먹음
+                 */
+                if (wumpusRoom == currentRoom) {
+                    System.out.println("\"으아아아아악!\"");
+                    delay(500L);
+                    System.out.println("움퍼스가 당신을 잡아먹었습니다.");
+                    gameOver = true;
+                }
+
+                /*
+                움퍼스가 이동해갔고 플레이어와 같은 방이 아니라면
+                움퍼스가 도망갔다는 메시지를 출력
+                 */
+                else if (wumpusRoom == nextRoom) {
+                    System.out.println("움퍼스가 도망갔습니다.");
+                }
+            }
+        }
+    }
+
+    /*
+게임 플레이가 종료되었을 때 다시 플레이할지
+게임을 종료할지 여부를 묻는 메소드
+ */
+    private static void selectReplay() {
+        System.out.println("게임이 끝났습니다. 다시 플레이하시겠습니까?");
+
+        /*
+        0번(종료)과 1번(다시 플레이) 선택지를 주고
+        둘 중 하나를 입력했을 때에 해당하는 처리
+         */
+        while (true) {
+            System.out.println("(0: 종료, 1: 다시플레이)");
+            String action = scanner.nextLine();
+
+            if (action.equals("0")) {
+                System.out.println("게임을 종료합니다");
+                System.exit(0);
+            }
+
+            else if (action.equals("1")) {
+                System.out.println("게임을 다시 플레이합니다.");
+                break;
+            }
+
+            else {
+                System.out.println("잘못된 입력입니다.");
+            }
+        }
+    }
+
+    /*
+문자열을 정수로 변환해 반환
+ */
+    private static int parseIntegerOrNegative1(String input) {
+        return Integer.parseInt(input);
+    }
+
+    /*
+    지정된 시간(밀리초 단위)만큼 쉼
+    예외가 발생해도 게임 플레이에 지장은 없기 때문에 무시함
+     */
     private static void delay(Long ms) {
         try {
             Thread.sleep(ms);
